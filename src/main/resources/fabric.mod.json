@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 1,
+	"id": "thedreamers_guards",
+	"version": "${version}",
+	"name": "The Dreamers Guards",
+	"description": "TheDreamers Guards is a powerful client-side and server-side anti-cheat system designed to protect Minecraft gameplay integrity. It detects unauthorized modifications, blocks exploit usage, and ensures fair play by enforcing strict mod validation and real-time cheat detection.",
+	"authors": [
+		"IamFriendly0242u"
+	],
+	"contact": {
+		"homepage": "https://discord.gg/RXUuaqARzU",
+		"sources": "https://github.com/IamFriendly/thedreamers_guards"
+	},
+	"license": "All Rights Reserved",
+	"icon": "assets/thedreamers_guards/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.thedreamers.guards.Thedreamers_guards"
+		],
+		"client": [
+			"net.thedreamers.guards.client.Thedreamers_guardsClient"
+		],
+		"server": [
+			"net.thedreamers.guards.server.Thedreamers_guardsServer"
+		]
+	},
+	"mixins": [
+		"thedreamers_guards.mixins.json",
+		{
+			"config": "thedreamers_guards.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.1.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
