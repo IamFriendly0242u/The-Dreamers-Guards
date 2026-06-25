@@ -63,14 +63,18 @@ public class Thedreamers_guards implements ModInitializer {
 
 			server.execute(() -> {
 				PENDING_VERIFICATION.remove(player.getUUID());
+				String playerName = player.getScoreboardName();
+				String playerUuid = player.getUUID().toString();
 
 				if (decryptedToken.equals("CORRUPTED_PACKET")) {
 					FlagSession.start(server, player, "Packet Tampering (Decryption Failed)");
+					DiscordWebhook.sendVerifyAlert(server, playerName, playerUuid, "FAILED", "Packet Tampering (Decryption Failed)");
 					return;
 				}
 
 				if (decryptedToken.equals("DIRTY_CHEATER")) {
 					FlagSession.start(server, player, "Illegal Modifications (Client-Side Checked)");
+					DiscordWebhook.sendVerifyAlert(server, playerName, playerUuid, "FAILED", "Client-Side Scanner flagged illegal mods loaded.");
 					return;
 				}
 
@@ -78,9 +82,12 @@ public class Thedreamers_guards implements ModInitializer {
 				for (String cheat : blacklist) {
 					if (!cheat.trim().isEmpty() && decryptedModList.toLowerCase().contains(cheat.toLowerCase())) {
 						FlagSession.start(server, player, "Illegal Mod: " + cheat);
+						DiscordWebhook.sendVerifyAlert(server, playerName, playerUuid, "FAILED", "Blacklisted modification signature found: " + cheat);
 						return;
 					}
 				}
+
+				DiscordWebhook.sendVerifyAlert(server, playerName, playerUuid, "SUCCESS", "Passed secure authentication payload validation check.");
 			});
 		});
 
@@ -111,6 +118,7 @@ public class Thedreamers_guards implements ModInitializer {
 							if (pendingPlayer != null) {
 								Component kickMessage = Component.literal(AntiCheatConfig.getKickNoModMessage());
 								pendingPlayer.connection.disconnect(kickMessage);
+								DiscordWebhook.sendVerifyAlert(server, pendingPlayer.getScoreboardName(), uuid.toString(), "FAILED", "No authentication packet received (Missing Mod).");
 							}
 						}
 					});

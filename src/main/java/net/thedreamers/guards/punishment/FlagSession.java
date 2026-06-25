@@ -111,7 +111,7 @@ public class FlagSession {
         });
     }
 
-    public static void resolve(UUID uuid, String type) {
+    public static boolean resolve(UUID uuid, String type) {
         FlagSession session = SESSIONS.remove(uuid);
         if (session != null) {
             session.cancel();
@@ -129,7 +129,9 @@ public class FlagSession {
                     DiscordWebhook.sendAlert(session.server, session.playerName, session.playerUuid.toString(), session.playerIp, session.reason + " (Admin Resolve Offline)", postPhase, "KICK (SUSPEND)");
                 }
             }
+            return true;
         }
+        return false;
     }
 
     private void cancel() {

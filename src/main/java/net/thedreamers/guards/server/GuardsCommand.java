@@ -13,6 +13,7 @@ import net.minecraft.server.players.NameAndId;
 import net.thedreamers.guards.Thedreamers_guards;
 import net.thedreamers.guards.config.AntiCheatConfig;
 import net.thedreamers.guards.punishment.FlagSession;
+import net.thedreamers.guards.punishment.PunishmentExecutor;
 import net.thedreamers.guards.punishment.SuspensionManager;
 import net.thedreamers.guards.webhook.DiscordWebhook;
 import net.fabricmc.loader.api.FabricLoader;
@@ -90,7 +91,11 @@ public class GuardsCommand {
                                             }
                                             ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
                                             String type = StringArgumentType.getString(ctx, "type").toUpperCase();
-                                            FlagSession.resolve(target.getUUID(), type);
+
+                                            if (!FlagSession.resolve(target.getUUID(), type)) {
+                                                PunishmentExecutor.execute(source.getServer(), target, "Manual Admin Enforcement", type);
+                                            }
+
                                             DiscordWebhook.sendActionAlert(source.getServer(), adminName, target.getScoreboardName(), type);
                                             ctx.getSource().sendSuccess(() -> Component.literal("§a[Guards] Guards Action Successfully: " + type + " the " + target.getScoreboardName()), false);
                                             return 1;
