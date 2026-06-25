@@ -3,12 +3,12 @@
 	"id": "thedreamers_guards",
 	"version": "${version}",
 	"name": "The Dreamers Guards",
-	"description": "TheDreamers Guards is a powerful client-side and server-side anti-cheat system designed to protect Minecraft gameplay integrity. It detects unauthorized modifications, blocks exploit usage, and ensures fair play by enforcing strict mod validation and real-time cheat detection.",
+	"description": "The Dreamers Guards is an enterprise-grade security platform engineered to secure Fabric environments running Java 25. It deploys advanced client-side mod scanning, Base64 encrypted network verification matrices, a progressive 4-phase local suspension database tracker, and fully customizable event-driven Discord webhook embeds to eliminate exploit vulnerabilities and preserve server gameplay integrity.",
 	"authors": [
 		"IamFriendly0242u"
 	],
 	"contact": {
-		"homepage": "https://discord.gg/RXUuaqARzU",
+		"discord": "https://discord.gg/RXUuaqARzU",
 		"sources": "https://github.com/IamFriendly/thedreamers_guards"
 	},
 	"license": "All Rights Reserved",

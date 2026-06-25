@@ -30,6 +30,10 @@ public class AntiCheatConfig {
     private static String serverName = "The Dreamers Minecraft Server";
     private static String webhookAvatarUrl = "https://assets.mojang.com/3d/assets/main-menu/minecraft-logo.png";
     private static String embedThumbnailUrl = "https://assets.mojang.com/3d/assets/main-menu/minecraft-logo.png";
+    private static String verifyThumbnailUrl = "https://assets.mojang.com/3d/assets/main-menu/minecraft-logo.png";
+    private static String actionThumbnailUrl = "https://assets.mojang.com/3d/assets/main-menu/minecraft-logo.png";
+    private static String pardonThumbnailUrl = "https://assets.mojang.com/3d/assets/main-menu/minecraft-logo.png";
+    private static String reloadThumbnailUrl = "https://assets.mojang.com/3d/assets/main-menu/minecraft-logo.png";
     private static String avatarServiceUrl = "https://crafthead.net/cube/{name}";
     private static String webhookOnAction = "true";
     private static String webhookOnPardon = "true";
@@ -86,14 +90,6 @@ public class AntiCheatConfig {
                 exception.printStackTrace();
             }
 
-            int versionComparison = compareVersions(currentModVersion, configVersion);
-
-            if (versionComparison > 0) {
-                backupOldConfig();
-                generateDefaultConfig();
-                return;
-            }
-
             Properties properties = new Properties();
             try (BufferedReader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
                 properties.load(reader);
@@ -106,6 +102,10 @@ public class AntiCheatConfig {
                 discordWebhookUrl = properties.getProperty("discord_webhook_url", discordWebhookUrl);
                 webhookAvatarUrl = properties.getProperty("webhook_avatar_url", webhookAvatarUrl);
                 embedThumbnailUrl = properties.getProperty("embed_thumbnail_url", embedThumbnailUrl);
+                verifyThumbnailUrl = properties.getProperty("verify_thumbnail_url", verifyThumbnailUrl);
+                actionThumbnailUrl = properties.getProperty("action_thumbnail_url", actionThumbnailUrl);
+                pardonThumbnailUrl = properties.getProperty("pardon_thumbnail_url", pardonThumbnailUrl);
+                reloadThumbnailUrl = properties.getProperty("reload_thumbnail_url", reloadThumbnailUrl);
                 avatarServiceUrl = properties.getProperty("avatar_service_url", avatarServiceUrl);
                 serverName = properties.getProperty("server_name", serverName);
                 webhookOnAction = properties.getProperty("webhook_on_action", webhookOnAction);
@@ -131,7 +131,11 @@ public class AntiCheatConfig {
                 exception.printStackTrace();
             }
 
-            if (versionComparison < 0) {
+            int versionComparison = compareVersions(currentModVersion, configVersion);
+            if (versionComparison > 0 || !currentModVersion.equals(configVersion)) {
+                backupOldConfig();
+                generateDefaultConfig();
+            } else if (versionComparison < 0) {
                 generateDefaultConfig();
             }
         } else {
@@ -154,6 +158,10 @@ public class AntiCheatConfig {
         configBuilder.append("discord_webhook_url=").append(discordWebhookUrl).append("\n\n");
         configBuilder.append("webhook_avatar_url=").append(webhookAvatarUrl).append("\n\n");
         configBuilder.append("embed_thumbnail_url=").append(embedThumbnailUrl).append("\n\n");
+        configBuilder.append("verify_thumbnail_url=").append(verifyThumbnailUrl).append("\n\n");
+        configBuilder.append("action_thumbnail_url=").append(actionThumbnailUrl).append("\n\n");
+        configBuilder.append("pardon_thumbnail_url=").append(pardonThumbnailUrl).append("\n\n");
+        configBuilder.append("reload_thumbnail_url=").append(reloadThumbnailUrl).append("\n\n");
         configBuilder.append("avatar_service_url=").append(avatarServiceUrl).append("\n\n");
         configBuilder.append("server_name=").append(serverName).append("\n\n");
         configBuilder.append("# --- DISCORD WEBHOOK FEATURE TOGGLES ---\n");
@@ -216,8 +224,7 @@ public class AntiCheatConfig {
 
         Path backupFile = BACKUP_DIR.resolve("thedreamers_guards_backup" + nextIndex + ".properties");
         try {
-            Files.move(CONFIG_PATH, backupFile);
-            System.out.println("[The Dreamers Guards] Outdated configuration version backed up to: " + backupFile.getFileName());
+            Files.copy(CONFIG_PATH, backupFile);
         } catch (IOException exception) {
             exception.printStackTrace();
         }
@@ -245,6 +252,10 @@ public class AntiCheatConfig {
     public static String getDiscordWebhookUrl() { return discordWebhookUrl; }
     public static String getWebhookAvatarUrl() { return webhookAvatarUrl; }
     public static String getEmbedThumbnailUrl() { return embedThumbnailUrl; }
+    public static String getVerifyThumbnailUrl() { return verifyThumbnailUrl; }
+    public static String getActionThumbnailUrl() { return actionThumbnailUrl; }
+    public static String getPardonThumbnailUrl() { return pardonThumbnailUrl; }
+    public static String getReloadThumbnailUrl() { return reloadThumbnailUrl; }
     public static String getAvatarServiceUrl() { return avatarServiceUrl; }
     public static String getServerName() { return serverName; }
     public static boolean isWebhookOnAction() { return Boolean.parseBoolean(webhookOnAction); }

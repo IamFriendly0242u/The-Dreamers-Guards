@@ -130,6 +130,7 @@ public class GuardsCommand {
                 .then(Commands.literal("reload")
                         .executes(ctx -> {
                             CommandSourceStack source = ctx.getSource();
+                            String adminName = source.getTextName();
                             if (source.getEntity() instanceof ServerPlayer player) {
                                 NameAndId nameAndId = new NameAndId(player.getGameProfile().id(), player.getGameProfile().name());
                                 if (!source.getServer().getPlayerList().isOp(nameAndId)) {
@@ -140,6 +141,7 @@ public class GuardsCommand {
                             try {
                                 AntiCheatConfig.loadConfig();
                                 DiscordWebhook.init();
+                                DiscordWebhook.sendReloadAlert(source.getServer(), adminName);
                                 ctx.getSource().sendSuccess(() -> Component.literal("§a[TheDreamers Guards] Configuration, embeds, and localization reloaded successfully!"), true);
                                 return 1;
                             } catch (Exception e) {

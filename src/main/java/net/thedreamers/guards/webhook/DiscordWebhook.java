@@ -36,6 +36,8 @@ public class DiscordWebhook {
     private static final Path EMBED_ACTION_FILE = EMBEDS_DIR.resolve("action_alert.json");
     private static final Path EMBED_PARDON_FILE = EMBEDS_DIR.resolve("pardon_alert.json");
     private static final Path EMBED_VERIFY_FILE = EMBEDS_DIR.resolve("verify_alert.json");
+    private static final Path EMBED_RELOAD_FILE = EMBEDS_DIR.resolve("reload_alert.json");
+    private static final Path EMBED_DEFAULT_FILE = EMBEDS_DIR.resolve("default.json");
     private static final Path LANG_FILE = LANG_DIR.resolve("en_us.json");
 
     private static final Map<String, String> TRANSLATIONS = new HashMap<>();
@@ -109,7 +111,7 @@ public class DiscordWebhook {
             embed.addProperty("description", "Admin %admin_name% executed forced punishment action on target player.");
 
             JsonObject thumbnail = new JsonObject();
-            thumbnail.addProperty("url", "%embed_thumbnail%");
+            thumbnail.addProperty("url", "%action_thumbnail%");
             embed.add("thumbnail", thumbnail);
 
             JsonArray fields = new JsonArray();
@@ -134,7 +136,7 @@ public class DiscordWebhook {
             embed.addProperty("description", "Admin %admin_name% pardoned and removed target player from suspension list.");
 
             JsonObject thumbnail = new JsonObject();
-            thumbnail.addProperty("url", "%embed_thumbnail%");
+            thumbnail.addProperty("url", "%pardon_thumbnail%");
             embed.add("thumbnail", thumbnail);
 
             JsonArray fields = new JsonArray();
@@ -162,6 +164,10 @@ public class DiscordWebhook {
             author.addProperty("icon_url", "%player_avatar%");
             embed.add("author", author);
 
+            JsonObject thumbnail = new JsonObject();
+            thumbnail.addProperty("url", "%verify_thumbnail%");
+            embed.add("thumbnail", thumbnail);
+
             JsonArray fields = new JsonArray();
             fields.add(createFieldTemplate("Player Name", "%player_name%", true));
             fields.add(createFieldTemplate("Result Status", "%verify_status%", true));
@@ -174,6 +180,49 @@ public class DiscordWebhook {
 
             try (BufferedWriter writer = Files.newBufferedWriter(EMBED_VERIFY_FILE, StandardCharsets.UTF_8)) {
                 writer.write(GSON.toJson(embed));
+            }
+        }
+
+        if (!Files.exists(EMBED_RELOAD_FILE)) {
+            JsonObject embed = new JsonObject();
+            embed.addProperty("color", "#55FFFF");
+            embed.addProperty("title", "SYSTEM CONFIGURATION RELOAD");
+            embed.addProperty("description", "Admin %admin_name% reloaded the anti-cheat core security configuration variables.");
+
+            JsonObject thumbnail = new JsonObject();
+            thumbnail.addProperty("url", "%reload_thumbnail%");
+            embed.add("thumbnail", thumbnail);
+
+            JsonArray fields = new JsonArray();
+            fields.add(createFieldTemplate("Administrator", "%admin_name%", true));
+            embed.add("fields", fields);
+
+            JsonObject footer = new JsonObject();
+            footer.addProperty("text", "System Maintenance | %server_name%");
+            embed.add("footer", footer);
+
+            try (BufferedWriter writer = Files.newBufferedWriter(EMBED_RELOAD_FILE, StandardCharsets.UTF_8)) {
+                writer.write(GSON.toJson(embed));
+            }
+        }
+
+        if (!Files.exists(EMBED_DEFAULT_FILE)) {
+            JsonObject guide = new JsonObject();
+            guide.addProperty("documentation", "The Dreamers Guards Embed Customization Guide");
+            guide.addProperty("notice", "Administrators can customize thumbnails and layouts directly inside these JSON files instead of the properties configuration");
+            JsonObject variables = new JsonObject();
+            variables.addProperty("%player_name%", "Displays the flagged or verifying player name");
+            variables.addProperty("%player_avatar%", "Fetches the 3D cube render of the player head");
+            variables.addProperty("%embed_thumbnail%", "Uses the static threat alert thumbnail link");
+            variables.addProperty("%action_thumbnail%", "Uses the static admin enforcement action thumbnail link");
+            variables.addProperty("%pardon_thumbnail%", "Uses the static player pardon resolution thumbnail link");
+            variables.addProperty("%verify_thumbnail%", "Uses the static secure gateway verification thumbnail link");
+            variables.addProperty("%reload_thumbnail%", "Uses the static system maintenance reload thumbnail link");
+            variables.addProperty("%admin_name%", "Displays the name of the executing administrator");
+            variables.addProperty("%action_type%", "Shows the punishment type applied such as KICK or BAN");
+            guide.add("available_placeholders", variables);
+            try (BufferedWriter writer = Files.newBufferedWriter(EMBED_DEFAULT_FILE, StandardCharsets.UTF_8)) {
+                writer.write(GSON.toJson(guide));
             }
         }
     }
@@ -390,7 +439,7 @@ public class DiscordWebhook {
 
             if (template.has("thumbnail")) {
                 JsonObject thumbnail = new JsonObject();
-                thumbnail.addProperty("url", template.getAsJsonObject("thumbnail").get("url").getAsString().replace("%embed_thumbnail%", AntiCheatConfig.getEmbedThumbnailUrl()));
+                thumbnail.addProperty("url", template.getAsJsonObject("thumbnail").get("url").getAsString().replace("%action_thumbnail%", AntiCheatConfig.getActionThumbnailUrl()));
                 embed.add("thumbnail", thumbnail);
             }
 
@@ -454,7 +503,7 @@ public class DiscordWebhook {
 
             if (template.has("thumbnail")) {
                 JsonObject thumbnail = new JsonObject();
-                thumbnail.addProperty("url", template.getAsJsonObject("thumbnail").get("url").getAsString().replace("%embed_thumbnail%", AntiCheatConfig.getEmbedThumbnailUrl()));
+                thumbnail.addProperty("url", template.getAsJsonObject("thumbnail").get("url").getAsString().replace("%pardon_thumbnail%", AntiCheatConfig.getPardonThumbnailUrl()));
                 embed.add("thumbnail", thumbnail);
             }
 
@@ -520,6 +569,71 @@ public class DiscordWebhook {
             author.addProperty("name", template.getAsJsonObject("author").get("name").getAsString().replace("%player_name%", playerName));
             author.addProperty("icon_url", template.getAsJsonObject("author").get("icon_url").getAsString().replace("%player_avatar%", playerAvatarUrl));
             embed.add("author", author);
+
+            if (template.has("thumbnail")) {
+                JsonObject thumbnail = new JsonObject();
+                thumbnail.addProperty("url", template.getAsJsonObject("thumbnail").get("url").getAsString().replace("%verify_thumbnail%", AntiCheatConfig.getVerifyThumbnailUrl()));
+                embed.add("thumbnail", thumbnail);
+            }
+
+            if (template.has("footer")) {
+                JsonObject fObj = template.getAsJsonObject("footer");
+                JsonObject footer = new JsonObject();
+                footer.addProperty("text", fObj.get("text").getAsString().replace("%server_name%", currentServerName));
+                embed.add("footer", footer);
+            }
+
+            embeds.add(embed);
+            payload.add("embeds", embeds);
+            broadcastPayload(payload);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void sendReloadAlert(MinecraftServer server, String adminName) {
+        try {
+            JsonObject template;
+            try (BufferedReader reader = Files.newBufferedReader(EMBED_RELOAD_FILE, StandardCharsets.UTF_8)) {
+                template = JsonParser.parseReader(reader).getAsJsonObject();
+            } catch (Exception e) {
+                backupFile(EMBED_RELOAD_FILE);
+                return;
+            }
+
+            int rawColor = 16755200;
+            if (template.has("color")) {
+                rawColor = Integer.parseInt(template.get("color").getAsString().replace("#", ""), 16);
+            }
+            String currentServerName = AntiCheatConfig.getServerName();
+
+            JsonArray processedFields = new JsonArray();
+            JsonArray fields = template.getAsJsonArray("fields");
+            for (int i = 0; i < fields.size(); i++) {
+                JsonObject f = fields.get(i).getAsJsonObject();
+                JsonObject newField = new JsonObject();
+                newField.addProperty("name", f.get("name").getAsString());
+                newField.addProperty("value", f.get("value").getAsString().replace("%admin_name%", adminName));
+                newField.addProperty("inline", f.get("inline").getAsBoolean());
+                processedFields.add(newField);
+            }
+
+            JsonObject payload = new JsonObject();
+            payload.addProperty("username", "The Dreamers Guards");
+
+            JsonArray embeds = new JsonArray();
+            JsonObject embed = new JsonObject();
+            embed.addProperty("title", template.get("title").getAsString());
+            embed.addProperty("description", template.get("description").getAsString().replace("%admin_name%", adminName));
+            embed.addProperty("color", rawColor);
+            embed.addProperty("timestamp", Instant.now().toString());
+            embed.add("fields", processedFields);
+
+            if (template.has("thumbnail")) {
+                JsonObject thumbnail = new JsonObject();
+                thumbnail.addProperty("url", template.getAsJsonObject("thumbnail").get("url").getAsString().replace("%reload_thumbnail%", AntiCheatConfig.getReloadThumbnailUrl()));
+                embed.add("thumbnail", thumbnail);
+            }
 
             if (template.has("footer")) {
                 JsonObject fObj = template.getAsJsonObject("footer");
