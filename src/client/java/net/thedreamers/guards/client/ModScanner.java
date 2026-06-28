@@ -8,7 +8,7 @@ public class ModScanner {
     private static final String[] BLACKLISTED_MOD_IDS = {
             "wurst", "meteor-client", "liquidbounce", "bleachhack", "aristois",
             "kami", "rusherhack", "future", "inertia", "phobos",
-            "salhack", "impact", "mathax", "vector", "danielfrominternet",
+            "salhack", "mathax", "vector", "danielfrominternet",
             "kami-blue", "seppuku", "coffee", "konas", "lambda",
             "abyss", "w+3", "w+2", "gopro", "earthhack",
             "bleach", "pixel", "liquid", "ares", "novoline",

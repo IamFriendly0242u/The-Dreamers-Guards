@@ -1,71 +1,65 @@
 package net.thedreamers.guards.punishment;
 
-import net.thedreamers.guards.config.AntiCheatConfig;
-import net.thedreamers.guards.webhook.DiscordWebhook;
-import com.mojang.authlib.GameProfile;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.players.UserBanList;
 import net.minecraft.server.players.UserBanListEntry;
 import net.minecraft.server.players.NameAndId;
+import net.thedreamers.guards.Thedreamers_guards;
+import net.thedreamers.guards.config.AntiCheatConfig;
+import net.thedreamers.guards.webhook.DiscordWebhook;
+import net.thedreamers.lib.anticheat.AdminCommandCore;
+import java.util.UUID;
 
 public class PunishmentExecutor {
 
-    public static void executeAuto(MinecraftServer server, ServerPlayer player, String reason) {
-        String configuredMode = AntiCheatConfig.getPunishmentMode();
-        execute(server, player, reason, configuredMode);
-    }
+    private static final AdminCommandCore ADMIN_CORE = new AdminCommandCore(
+            SuspensionManager.getEngine(),
+            Thedreamers_guards.CONFIG_ENGINE
+    );
 
-    public static void executeManual(MinecraftServer server, ServerPlayer player, String reason, String action) {
-        execute(server, player, reason, action.toUpperCase());
+    private static String cleanFormatting(String input) {
+        if (input == null) return "";
+        return input.replace("\\u00A7", "§").replace("&", "§").replace("\\n", "\n");
     }
 
     public static void execute(MinecraftServer server, ServerPlayer player, String reason, String mode) {
-        if (player == null) {
-            String failedLog = String.format(AntiCheatConfig.getConsoleLogFailed(), "Unknown Player");
-            broadcastToAll(server, AntiCheatConfig.getConsoleLogFailed().substring(0, 24) + failedLog);
-            return;
-        }
+        if (player == null) return;
+        String name = player.getScoreboardName();
+        String uuid = player.getUUID().toString();
+        String ip = player.getIpAddress();
 
-        String playerName = player.getScoreboardName();
-        String playerUuid = player.getUUID().toString();
-        String playerIp = player.getIpAddress();
-        String kickScreenTemplate = AntiCheatConfig.getKickCheaterMessage();
-        Component kickScreenMessage = Component.literal(String.format(kickScreenTemplate, reason));
+        String automatedKickMsg = Thedreamers_guards.CONFIG_ENGINE.getLanguageString("kick.caught_message", "Illegal Modifications");
+        boolean isAutomated = reason.equals(automatedKickMsg);
 
+        int phase = SuspensionManager.getPhase(name, uuid, ip);
         try {
-            int phase = SuspensionManager.getPhase(playerName, playerUuid, playerIp);
-            if ("BAN".equals(mode)) {
-                applyBan(server, player, reason);
-                player.connection.disconnect(kickScreenMessage);
-                String format = AntiCheatConfig.getBroadcastBanMessage();
-                broadcastToAll(server, String.format(format, playerName));
-                DiscordWebhook.sendAlert(server, playerName, playerUuid, playerIp, reason, phase, "BAN");
-            } else {
-                SuspensionManager.suspend(playerName, playerUuid, playerIp);
-                int postPhase = SuspensionManager.getPhase(playerName, playerUuid, playerIp);
-                player.connection.disconnect(kickScreenMessage);
-                String format = AntiCheatConfig.getBroadcastKickMessage();
-                broadcastToAll(server, String.format(format, playerName));
-                DiscordWebhook.sendAlert(server, playerName, playerUuid, playerIp, reason, postPhase, "KICK (SUSPEND)");
+            SuspensionManager.getEngine().load();
+            if (!isAutomated) {
+                if ("BAN".equalsIgnoreCase(mode)) {
+                    SuspensionManager.getEngine().suspend(name, 4, -1, reason);
+                    SuspensionManager.getEngine().suspend(uuid, 4, -1, reason);
+                    SuspensionManager.getEngine().suspend(ip, 4, -1, reason);
+                    String rawBroadcast = Thedreamers_guards.CONFIG_ENGINE.getLanguageString("broadcast_ban_message", "§3[BANNED] §e%s §7got caught cheating. See ya never!");
+                    server.getPlayerList().broadcastSystemMessage(Component.literal(cleanFormatting(String.format(rawBroadcast, name))), false);
+                    DiscordWebhook.sendAlert(server, name, uuid, ip, reason, 4, "BAN");
+                } else {
+                    int nextPhase = phase == 0 ? 1 : Math.min(phase + 1, 3);
+                    int duration = 20;
+                    if (nextPhase == 2) duration = 120;
+                    if (nextPhase == 3) duration = 360;
+                    SuspensionManager.getEngine().suspend(name, nextPhase, duration, reason);
+                    SuspensionManager.getEngine().suspend(uuid, nextPhase, duration, reason);
+                    SuspensionManager.getEngine().suspend(ip, nextPhase, duration, reason);
+                    String rawBroadcast = Thedreamers_guards.CONFIG_ENGINE.getLanguageString("broadcast_kick_message", "§a[KICKED] §e%s §7was removed from the game. Trash cleared.");
+                    server.getPlayerList().broadcastSystemMessage(Component.literal(cleanFormatting(String.format(rawBroadcast, name))), false);
+                    DiscordWebhook.sendAlert(server, name, uuid, ip, reason, nextPhase, "KICK");
+                }
             }
-        } catch (Exception exception) {
-            String failedLog = String.format(AntiCheatConfig.getConsoleLogFailed(), playerName);
-            broadcastToAll(server, failedLog);
-            exception.printStackTrace();
+            player.connection.disconnect(SuspensionManager.getSuspensionComponent(name, uuid, ip));
+        } catch (Exception e) {
+            String consoleLogFailed = Thedreamers_guards.CONFIG_ENGINE.getLanguageString("console_log_failed", "§c[WARN] FAILED! §7Failed to execute action on %s.");
+            server.getPlayerList().broadcastSystemMessage(Component.literal(cleanFormatting(String.format(consoleLogFailed, name))), false);
         }
-    }
-
-    private static void applyBan(MinecraftServer server, ServerPlayer player, String reason) {
-        GameProfile profile = player.getGameProfile();
-        UserBanList banList = server.getPlayerList().getBans();
-        NameAndId nameAndId = new NameAndId(profile.id(), profile.name());
-        UserBanListEntry banEntry = new UserBanListEntry(nameAndId, null, "TheDreamers Guards", null, reason);
-        banList.add(banEntry);
-    }
-
-    private static void broadcastToAll(MinecraftServer server, String message) {
-        server.getPlayerList().broadcastSystemMessage(Component.literal(message), false);
     }
 }
