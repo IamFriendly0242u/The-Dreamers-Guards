@@ -21,6 +21,13 @@
 
 This mod requires **The Dreamers Lib** to be installed on both the server and client environment. Gaining access to the server without the library companion framework will result in an immediate connection termination.
 
+
+## License
+
+This project is protected under **All Rights Reserved** license. No part of this software may be copied, modified, merged, published, or redistributed in any form without prior written permission.
+
+**Built by IamFriendly0242u**
+
 ### Developer Setup
 
 Add the following to your `build.gradle` to compile against the companion library framework:
@@ -33,10 +40,3 @@ dependencies {
 
 	modImplementation files("../TheDreamersLib/build/libs/thedreamers_lib-1.0.0.jar")
 }
-
-## License
-
-This project is protected under **All Rights Reserved** license. No part of this software may be copied, modified, merged, published, or redistributed in any form without prior written permission.
-
----
-*Built by IamFriendly0242u*
