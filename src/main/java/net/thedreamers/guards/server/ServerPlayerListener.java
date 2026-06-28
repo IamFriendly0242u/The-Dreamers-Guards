@@ -55,7 +55,7 @@ public class ServerPlayerListener {
                 ServerPlayer player = server.getPlayerList().getPlayer(uuid);
                 if (player != null) {
                     server.execute(() -> {
-                        String msg = "§c[The Dreamers Guards]\n§7Verification timeout. Client failed to provide security telemetry.";
+                        String msg = "§c[The Dreamers Guards]\n§7Verification timeout.\n§cRequired mod missing: §bThe Dreamers Guards\n§7Please download and install the mod to connect.";
                         player.connection.disconnect(Component.literal(msg));
                     });
                 }
